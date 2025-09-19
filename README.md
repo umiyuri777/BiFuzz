@@ -22,8 +22,7 @@ Unity 2022.3.12f1
 BiFuzz  
 ├── BiFuzz
 └── StarCollection
-    └── Assets  
-        └── Logs  
+    └── Assets
 </pre>
 
 The default play style is Play Style A introduced in the paper. To change the play style, rewrite the 'MutateParam' method in 'bifuzz_init.cs' and 'bifuzz_local.cs'.
