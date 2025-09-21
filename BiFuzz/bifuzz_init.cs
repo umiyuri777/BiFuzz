@@ -475,9 +475,7 @@ public class grad_init : MonoBehaviour
     // Setting a play style
     private void MutateParam()
     {
-        """
-        This method is usin "Play Style A".
-        """
+        /* This method is using "Play Style A". */
         int minNum = 1; 
         int maxNum = 11; 
         
@@ -510,9 +508,7 @@ public class grad_init : MonoBehaviour
 
     //private void MutateParam()
     //{
-    //    """
-    //    This method is using "Play Style B".
-    //    """
+    //    /* This method is using "Play Style B". */
     //    int minNum = 10;
     //    int maxNum = 11;
 

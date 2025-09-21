@@ -657,9 +657,7 @@ public class grad_local : MonoBehaviour
     // Settin a play style
     private void MutateParam()
     {
-        """
-        This method is using "Play Style A".
-        """
+        /* This method is using "Play Style A". */
         int maxNum = 100; 
         int maxRange = 100; 
         List<string> typeLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")));
@@ -687,9 +685,7 @@ public class grad_local : MonoBehaviour
 
 //    private void MutateParam()
 //    {
-//        """
-//        This method is using "Play Style B".
-//        """
+//        /* This method is using "Play Style B". */
 //        int minNum = 50;
 //        int maxNum = 100;
 //        int maxRange = 100;
