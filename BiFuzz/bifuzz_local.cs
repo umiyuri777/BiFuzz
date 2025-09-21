@@ -683,30 +683,30 @@ public class grad_local : MonoBehaviour
         File.WriteAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv"), csvLines.ToArray());
     }
 
-//    private void MutateParam()
-//    {
-//        /* This method is using "Play Style B". */
-//        int minNum = 50;
-//        int maxNum = 100;
-//        int maxRange = 100;
-//        List<string> typeLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")));
-//        string nextType = typeLines[typeLines.Count - 1];
-//        List<string> csvLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv")));
-//        if (nextType == "init")
-//        {
-//            Debug.Log("Since the next is global fuzzing, initializing local parameters.");
-//            csvLines.Add($"{cpNum1},{cpNum2},{cpNum3},{cpNum4},{cpNum5},{cpNum6},{cpNum7},{cpNum8},{cpNum9},{cpNum10}," +
-//                $"{cpNum1_range},{cpNum2_range},{cpNum3_range},{cpNum4_range},{cpNum5_range},{cpNum6_range},{cpNum7_range},{cpNum8_range},{cpNum9_range},{cpNum10_range}," +
-//                $"{cpNum1_dir},{cpNum2_dir},{cpNum3_dir},{cpNum4_dir},{cpNum5_dir},{cpNum6_dir},{cpNum7_dir},{cpNum8_dir},{cpNum9_dir},{cpNum10_dir}");
-//        }
-//        else
-//        {
-//            Debug.Log("Since the next is local fuzzing, mutating local parameters.");
-//            csvLines.Add($"{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)}," +
-//                $"{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)}," +
-//                $"{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)}");
-//        }
+    //    private void MutateParam()
+    //    {
+    //        /* This method is using "Play Style B". */
+    //        int minNum = 50;
+    //        int maxNum = 100;
+    //        int maxRange = 100;
+    //        List<string> typeLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")));
+    //        string nextType = typeLines[typeLines.Count - 1];
+    //        List<string> csvLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv")));
+    //        if (nextType == "init")
+    //        {
+    //            Debug.Log("Since the next is global fuzzing, initializing local parameters.");
+    //            csvLines.Add($"{cpNum1},{cpNum2},{cpNum3},{cpNum4},{cpNum5},{cpNum6},{cpNum7},{cpNum8},{cpNum9},{cpNum10}," +
+    //                $"{cpNum1_range},{cpNum2_range},{cpNum3_range},{cpNum4_range},{cpNum5_range},{cpNum6_range},{cpNum7_range},{cpNum8_range},{cpNum9_range},{cpNum10_range}," +
+    //                $"{cpNum1_dir},{cpNum2_dir},{cpNum3_dir},{cpNum4_dir},{cpNum5_dir},{cpNum6_dir},{cpNum7_dir},{cpNum8_dir},{cpNum9_dir},{cpNum10_dir}");
+    //        }
+    //        else
+    //        {
+    //            Debug.Log("Since the next is local fuzzing, mutating local parameters.");
+    //            csvLines.Add($"{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)},{UnityEngine.Random.Range(minNum, maxNum)}," +
+    //                $"{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)}," +
+    //                $"{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)}");
+    //        }
 
-//        File.WriteAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv"), csvLines.ToArray());
-//    }
-//}
+    //        File.WriteAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv"), csvLines.ToArray());
+    //    }
+}
