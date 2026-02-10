@@ -645,10 +645,6 @@ public class grad_local : MonoBehaviour
                     z_min = ref_point.z - ref_point.z * rangeFactor;
                     z_max = ref_point.z;
                     break;
-                default:
-                    x_min = x_max = ref_point.x;
-                    z_min = z_max = ref_point.z;
-                    break;
             }
 
             int tryCount = 0;
