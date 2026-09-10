@@ -9,13 +9,13 @@ public class test_GameRestart : MonoBehaviour
     int restartCount = 0;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         restartCount = PlayerPrefs.GetInt("RestartCount", 0);
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (count == 300)
         {
@@ -26,7 +26,7 @@ public class test_GameRestart : MonoBehaviour
         count++;
     }
 
-    void Retry()
+    private void Retry()
     {
         PlayerPrefs.SetInt("RestartCount", restartCount);
         PlayerPrefs.Save();

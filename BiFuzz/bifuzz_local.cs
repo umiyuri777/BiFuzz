@@ -3,9 +3,7 @@ using UnityEngine;
 using Cinemachine;
 using System.IO;
 using System.Linq;
-using NUnit.Framework.Internal.Builders;
 using UnityEngine.SceneManagement;
-using System;
 
 public class grad_local : MonoBehaviour
 {
@@ -128,7 +126,6 @@ public class grad_local : MonoBehaviour
     
     Vector3 postPos = Vector3.zero;
     Vector3 nowPos = Vector3.zero;
-    Vector3 fixed_nowPos = Vector3.zero;
     int avdCnt = 0;
     bool isAvding = false;
     bool isAvoidRight = false;
@@ -140,57 +137,33 @@ public class grad_local : MonoBehaviour
     [SerializeField]
     private GameObject stuckBugs;
 
-    void Start()
+    private void Start()
     {
         
         Application.logMessageReceived += OnLogMessageReceived;
+        EnsureLocalParameterFile();
 
-        
-        if (!File.Exists(Path.Combine(Application.dataPath, "Logs", "param_local.csv")))
-        {
-            try
-            {
-                
-                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "param_local.csv"), false))
-                {
-                    
-                    writer.WriteLine("cpNum1,cpNum2,cpNum3,cpNum4,cpNum5,cpNum6,cpNum7,cpNum8,cpNum9,cpNum10,cpNum1_range,cpNum2_range,cpNum3_range,cpNum4_range,cpNum5_range,cpNum6_range,cpNum7_range,cpNum8_range,cpNum9_range,cpNum10_range,cpNum1_dir,cpNum2_dir,cpNum3_dir,cpNum4_dir,cpNum5_dir,cpNum6_dir,cpNum7_dir,cpNum8_dir,cpNum9_dir,cpNum10_dir");
-                    writer.WriteLine($"{cpNum1},{cpNum2},{cpNum3},{cpNum4},{cpNum5},{cpNum6},{cpNum7},{cpNum8},{cpNum9},{cpNum10},{cpNum1_range},{cpNum2_range},{cpNum3_range},{cpNum4_range},{cpNum5_range},{cpNum6_range},{cpNum7_range},{cpNum8_range},{cpNum9_range},{cpNum10_range},{cpNum1_dir},{cpNum2_dir},{cpNum3_dir},{cpNum4_dir},{cpNum5_dir},{cpNum6_dir},{cpNum7_dir},{cpNum8_dir},{cpNum9_dir},{cpNum10_dir}");
-                    Debug.Log($"CSV file 'fuzz.csv' created: {filePath}");
-                }
-            }
-            catch (IOException e)
-            {
-                Debug.LogError($"Failed to create CSV file: {e.Message}");
-            }
-        }
+        string[] paramColumns = ReadLatestLocalParameters();
+        List<Vector3> treePositions = CollectTreePositions();
+        GenerateLocalCheckpoints(paramColumns, treePositions);
 
-        List<string> paramLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv")));
-        string paramLastLine = paramLines[paramLines.Count - 1];
-        string[] paramColumns = paramLastLine.Split(',');
+        List<string> csvLines = ExpandCheckpointFile();
+        BuildStrategyFromCheckpointLines(csvLines);
 
-        //Debug.Log("cpNum1: " + int.Parse(paramColumns[0]));
-        //Debug.Log("cpNum10_dir: " + int.Parse(paramColumns[29]));
-        List<Vector3> treePositions = new List<Vector3>();
-        if (terrain != null && terrain.terrainData != null)
-        {
-            foreach (var tree in terrain.terrainData.treeInstances)
-            {
-                Vector3 pos = Vector3.Scale(tree.position, terrain.terrainData.size) + terrain.transform.position;
-                treePositions.Add(pos);
-            }
-        }
-        cp1 = create_cp(int.Parse(paramColumns[0]), int.Parse(paramColumns[10]), int.Parse(paramColumns[20]), ss1_loc, treePositions);
-        cp2 = create_cp(int.Parse(paramColumns[1]), int.Parse(paramColumns[11]), int.Parse(paramColumns[21]), ss2_loc, treePositions);
-        cp3 = create_cp(int.Parse(paramColumns[2]), int.Parse(paramColumns[12]), int.Parse(paramColumns[22]), ss3_loc, treePositions);
-        cp4 = create_cp(int.Parse(paramColumns[3]), int.Parse(paramColumns[13]), int.Parse(paramColumns[23]), ss4_loc, treePositions);
-        cp5 = create_cp(int.Parse(paramColumns[4]), int.Parse(paramColumns[14]), int.Parse(paramColumns[24]), ss5_loc, treePositions);
-        cp6 = create_cp(int.Parse(paramColumns[5]), int.Parse(paramColumns[15]), int.Parse(paramColumns[25]), ss6_loc, treePositions);
-        cp7 = create_cp(int.Parse(paramColumns[6]), int.Parse(paramColumns[16]), int.Parse(paramColumns[26]), ss7_loc, treePositions);
-        cp8 = create_cp(int.Parse(paramColumns[7]), int.Parse(paramColumns[17]), int.Parse(paramColumns[27]), ss8_loc, treePositions);
-        cp9 = create_cp(int.Parse(paramColumns[8]), int.Parse(paramColumns[18]), int.Parse(paramColumns[28]), ss9_loc, treePositions);
-        cp10 = create_cp(int.Parse(paramColumns[9]), int.Parse(paramColumns[19]), int.Parse(paramColumns[29]), ss10_loc, treePositions);
+        //if (stuckBugs != null)
+        //{
+        //    stuckBugs.SetActive(true);
+        //}
+        //else
+        //{
+        //}
 
+        InitializeRuntimeDependencies();
+        InitializeFuzzLog();
+    }
+
+    private List<string> ExpandCheckpointFile()
+    {
         List<string> csvLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "check_points.csv")));
         for (int i = 0; i < csvLines.Count; i++)
         {
@@ -198,7 +171,7 @@ public class grad_local : MonoBehaviour
             switch (columns[0])
             {
                 case "1":
-                    for(int j = 0; j < cp1.Length; j++)
+                    for (int j = 0; j < cp1.Length; j++)
                     {
                         csvLines.Insert(i + 1, $"0,{cp1[j].x},{cp1[j].y},{cp1[j].z}");
                     }
@@ -259,6 +232,7 @@ public class grad_local : MonoBehaviour
                     break;
             }
         }
+
         for (int i = csvLines.Count - 1; i >= 0; i--)
         {
             string[] columns = csvLines[i].Split(',');
@@ -271,11 +245,13 @@ public class grad_local : MonoBehaviour
                 break;
             }
         }
-        
+
         File.WriteAllLines(Path.Combine(Application.dataPath, "Logs", "check_points.csv"), csvLines.ToArray());
+        return csvLines;
+    }
 
-
-        
+    private void BuildStrategyFromCheckpointLines(List<string> csvLines)
+    {
         strategy = new ss[csvLines.Count];
         Debug.Log("=== Sorted array ===");
         for (int i = 1; i < csvLines.Count; i++)
@@ -285,32 +261,82 @@ public class grad_local : MonoBehaviour
             strategy[i - 1].loc.x = float.Parse(columns[1]);
             strategy[i - 1].loc.y = float.Parse(columns[2]);
             strategy[i - 1].loc.z = float.Parse(columns[3]);
-            Debug.Log(strategy[i-1].index);
+            Debug.Log(strategy[i - 1].index);
             Debug.Log(strategy[i - 1].loc);
             Debug.Log($"Index: {columns[0]}, Location: ({columns[1]},{columns[2]},{columns[3]})");
         }
         Debug.Log($"Length of strategy: {strategy.Length}");
+    }
 
-        
-        //if (stuckBugs != null)
-        //{
-        //    stuckBugs.SetActive(true);
-        
-        //}
-        //else
-        //{
-        
-        //}
+    private string[] ReadLatestLocalParameters()
+    {
+        List<string> paramLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv")));
+        string paramLastLine = paramLines[paramLines.Count - 1];
+        return paramLastLine.Split(',');
+    }
 
+    private List<Vector3> CollectTreePositions()
+    {
+        List<Vector3> treePositions = new List<Vector3>();
+        if (terrain != null && terrain.terrainData != null)
+        {
+            foreach (var tree in terrain.terrainData.treeInstances)
+            {
+                Vector3 position = Vector3.Scale(tree.position, terrain.terrainData.size) + terrain.transform.position;
+                treePositions.Add(position);
+            }
+        }
+        return treePositions;
+    }
+
+    private void GenerateLocalCheckpoints(string[] paramColumns, List<Vector3> treePositions)
+    {
+        cp1 = CreateCheckpoints(int.Parse(paramColumns[0]), int.Parse(paramColumns[10]), int.Parse(paramColumns[20]), ss1_loc, treePositions);
+        cp2 = CreateCheckpoints(int.Parse(paramColumns[1]), int.Parse(paramColumns[11]), int.Parse(paramColumns[21]), ss2_loc, treePositions);
+        cp3 = CreateCheckpoints(int.Parse(paramColumns[2]), int.Parse(paramColumns[12]), int.Parse(paramColumns[22]), ss3_loc, treePositions);
+        cp4 = CreateCheckpoints(int.Parse(paramColumns[3]), int.Parse(paramColumns[13]), int.Parse(paramColumns[23]), ss4_loc, treePositions);
+        cp5 = CreateCheckpoints(int.Parse(paramColumns[4]), int.Parse(paramColumns[14]), int.Parse(paramColumns[24]), ss5_loc, treePositions);
+        cp6 = CreateCheckpoints(int.Parse(paramColumns[5]), int.Parse(paramColumns[15]), int.Parse(paramColumns[25]), ss6_loc, treePositions);
+        cp7 = CreateCheckpoints(int.Parse(paramColumns[6]), int.Parse(paramColumns[16]), int.Parse(paramColumns[26]), ss7_loc, treePositions);
+        cp8 = CreateCheckpoints(int.Parse(paramColumns[7]), int.Parse(paramColumns[17]), int.Parse(paramColumns[27]), ss8_loc, treePositions);
+        cp9 = CreateCheckpoints(int.Parse(paramColumns[8]), int.Parse(paramColumns[18]), int.Parse(paramColumns[28]), ss9_loc, treePositions);
+        cp10 = CreateCheckpoints(int.Parse(paramColumns[9]), int.Parse(paramColumns[19]), int.Parse(paramColumns[29]), ss10_loc, treePositions);
+    }
+
+    private void EnsureLocalParameterFile()
+    {
+        if (File.Exists(Path.Combine(Application.dataPath, "Logs", "param_local.csv")))
+        {
+            return;
+        }
+
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "param_local.csv"), false))
+            {
+                writer.WriteLine("cpNum1,cpNum2,cpNum3,cpNum4,cpNum5,cpNum6,cpNum7,cpNum8,cpNum9,cpNum10,cpNum1_range,cpNum2_range,cpNum3_range,cpNum4_range,cpNum5_range,cpNum6_range,cpNum7_range,cpNum8_range,cpNum9_range,cpNum10_range,cpNum1_dir,cpNum2_dir,cpNum3_dir,cpNum4_dir,cpNum5_dir,cpNum6_dir,cpNum7_dir,cpNum8_dir,cpNum9_dir,cpNum10_dir");
+                writer.WriteLine($"{cpNum1},{cpNum2},{cpNum3},{cpNum4},{cpNum5},{cpNum6},{cpNum7},{cpNum8},{cpNum9},{cpNum10},{cpNum1_range},{cpNum2_range},{cpNum3_range},{cpNum4_range},{cpNum5_range},{cpNum6_range},{cpNum7_range},{cpNum8_range},{cpNum9_range},{cpNum10_range},{cpNum1_dir},{cpNum2_dir},{cpNum3_dir},{cpNum4_dir},{cpNum5_dir},{cpNum6_dir},{cpNum7_dir},{cpNum8_dir},{cpNum9_dir},{cpNum10_dir}");
+                Debug.Log($"CSV file 'fuzz.csv' created: {filePath}");
+            }
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"Failed to create CSV file: {e.Message}");
+        }
+    }
+
+    private void InitializeRuntimeDependencies()
+    {
         controller = GetComponent<CharacterController>();
         animator = GetComponent<Animator>();
         freeLookCamera = GameObject.Find("FreeLook Camera");
         freeLook = freeLookCamera.GetComponent<CinemachineFreeLook>();
         LockCursor();
-
         frameIndex = 0;
+    }
 
-        
+    private void InitializeFuzzLog()
+    {
         try
         {
             using (StreamWriter writer = new StreamWriter(filePath, false))
@@ -325,7 +351,7 @@ public class grad_local : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -338,47 +364,7 @@ public class grad_local : MonoBehaviour
         if (frameIndex == 108000)
         {
             Debug.Log("Timeout");
-
-            
-            try
-            {
-                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"), true))
-                {
-                    writer.WriteLine("timeout");
-                }
-            }
-            catch (IOException e)
-            {
-                Debug.LogError($"Failed to create CSV file: {e.Message}");
-            }
-
-            
-            if (File.Exists(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")))
-            {
-                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv"), true))
-                {
-                    
-                    string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"));
-                    if (lines.Length >= 2 && lines[lines.Length - 1] == lines[lines.Length - 2])
-                    {
-                        writer.WriteLine("init");
-                    }
-                    else
-                    {
-                        writer.WriteLine("local");
-                    }
-                }
-                Debug.Log("Wrote to fuzz_type.csv file.");
-            }
-            else
-            {
-                Debug.Log("Error: fuzz_type.csv file does not exist.");
-                UnityEditor.EditorApplication.isPlaying = false;
-            }
-            MutateParam();
-            Application.logMessageReceived -= OnLogMessageReceived;
-            Scene scene = SceneManager.GetActiveScene(); 
-            SceneManager.LoadScene(scene.path); 
+            CompleteScheduledRun("timeout");
             return;
         }
 
@@ -389,159 +375,18 @@ public class grad_local : MonoBehaviour
             if (strategy.Length == 1)
             {
                 Debug.Log("Input finished");
-
-                
-                try
-                {
-                    using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"), true))
-                    {
-                        writer.WriteLine("null");
-                    }
-                }
-                catch (IOException e)
-                {
-                    Debug.LogError($"Failed to create CSV file: {e.Message}");
-                }
-
-                
-                if (File.Exists(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")))
-                {
-                    using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv"), true))
-                    {
-                        
-                        string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"));
-                        if (lines.Length >= 2 && lines[lines.Length - 1] == lines[lines.Length - 2])
-                        {
-                            writer.WriteLine("init");
-                        }
-                        else
-                        {
-                            writer.WriteLine("local");
-                        }
-                    }
-                    Debug.Log("Wrote to fuzz_type.csv file.");
-                }
-                else
-                {
-                    Debug.Log("Error: fuzz_type.csv file does not exist.");
-                    UnityEditor.EditorApplication.isPlaying = false;
-                }
-                MutateParam();
-                Application.logMessageReceived -= OnLogMessageReceived;
-                Scene scene = SceneManager.GetActiveScene(); 
-                SceneManager.LoadScene(scene.path); 
+                CompleteScheduledRun("null");
                 return;
             }
             Debug.Log("Item collected");
         }
 
         
-        if (frameIndex % 60 == 0)
-        {
-            float distance = Vector3.Distance(new Vector3(postPos.x, 0, postPos.z), new Vector3(nowPos.x, 0, nowPos.z));
-            if (distance < 1f)
-            {
-                isAvding = true;
-            }
-            postPos = nowPos;
-        }
+        DetectStoppedMovement();
 
-        Vector3 moveZ;
-        Vector3 moveX;
-        Vector3 direction;
-        if (isAvding == false)
-        {
-            
-            direction = new Vector3(strategy[0].loc.x - nowPos.x, 0f, strategy[0].loc.z - nowPos.z).normalized;
-            moveZ = direction * 1 * sprintSpeed;
-            moveX = new Vector3(0f, 0f, 0f);
-        }
-        else
-        {
-            if (avdCnt == 0) 
-            {
-                Vector3 forwardDirection = transform.forward;
-                direction = new Vector3(-transform.forward.x, transform.forward.y, -transform.forward.z);
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt < 60) 
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt == 60) 
-            {
-                int i = UnityEngine.Random.Range(0, 2);
-                if (i == 0) 
-                {
-                    isAvoidRight = false;
-                    direction = -transform.right;
-                }
-                else 
-                {
-                    isAvoidRight = true;
-                    direction = transform.right;
-                }
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt < 120) 
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt == 120) 
-            {
-                if (!isAvoidRight)
-                {
-                    direction = -transform.right;
-                }
-                else
-                {
-                    direction = transform.right;
-                }
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt < 239)
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else // avdCnt == 239
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt = 0;
-                isAvding = false;
-            }
-        }
+        CalculateMovement(out Vector3 direction, out Vector3 moveZ, out Vector3 moveX);
 
-        
-        try
-        {
-            using (StreamWriter writer = new StreamWriter(filePath, true))
-            {
-                string newLine = $"10,1,0,{direction.x},{direction.z},0";
-                writer.WriteLine(newLine);
-                
-            }
-        }
-        catch (IOException e)
-        {
-            Debug.LogError($"Failed to write to CSV file: {e.Message}");
-        }
+        WriteFuzzFrame(direction);
 
         if (controller.isGrounded)
         {
@@ -559,12 +404,171 @@ public class grad_local : MonoBehaviour
         frameIndex++;
     }
 
+    private void DetectStoppedMovement()
+    {
+        if (frameIndex % 60 != 0)
+        {
+            return;
+        }
+
+        float distance = Vector3.Distance(new Vector3(postPos.x, 0, postPos.z), new Vector3(nowPos.x, 0, nowPos.z));
+        if (distance < 1f)
+        {
+            isAvding = true;
+        }
+        postPos = nowPos;
+    }
+
+    private void CalculateMovement(out Vector3 direction, out Vector3 moveZ, out Vector3 moveX)
+    {
+        if (!isAvding)
+        {
+            direction = new Vector3(strategy[0].loc.x - nowPos.x, 0f, strategy[0].loc.z - nowPos.z).normalized;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            return;
+        }
+
+        if (avdCnt == 0)
+        {
+            direction = new Vector3(-transform.forward.x, transform.forward.y, -transform.forward.z);
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt < 60)
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt == 60)
+        {
+            int i = UnityEngine.Random.Range(0, 2);
+            if (i == 0)
+            {
+                isAvoidRight = false;
+                direction = -transform.right;
+            }
+            else
+            {
+                isAvoidRight = true;
+                direction = transform.right;
+            }
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt < 120)
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt == 120)
+        {
+            direction = !isAvoidRight ? -transform.right : transform.right;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt < 239)
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt = 0;
+            isAvding = false;
+        }
+    }
+
+    private void CompleteScheduledRun(string detectionResult)
+    {
+        RecordDetectionResult(detectionResult);
+        AppendNextFuzzType();
+        RestartExperiment();
+    }
+
+    private void RecordDetectionResult(string detectionResult)
+    {
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"), true))
+            {
+                writer.WriteLine(detectionResult);
+            }
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"Failed to create CSV file: {e.Message}");
+        }
+    }
+
+    private void AppendNextFuzzType()
+    {
+        string fuzzTypePath = Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv");
+        if (File.Exists(fuzzTypePath))
+        {
+            using (StreamWriter writer = new StreamWriter(fuzzTypePath, true))
+            {
+                string[] lines = File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"));
+                if (lines.Length >= 2 && lines[lines.Length - 1] == lines[lines.Length - 2])
+                {
+                    writer.WriteLine("init");
+                }
+                else
+                {
+                    writer.WriteLine("local");
+                }
+            }
+            Debug.Log("Wrote to fuzz_type.csv file.");
+        }
+        else
+        {
+            Debug.Log("Error: fuzz_type.csv file does not exist.");
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
+    }
+
+    private void RestartExperiment()
+    {
+        MutateParam();
+        Application.logMessageReceived -= OnLogMessageReceived;
+        Scene scene = SceneManager.GetActiveScene();
+        SceneManager.LoadScene(scene.path);
+    }
+
     private void LockCursor()
     {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         SetFreeLookSpeed(900, 6);
         isCursorLocked = true;
+    }
+
+    private void WriteFuzzFrame(Vector3 direction)
+    {
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(filePath, true))
+            {
+                string newLine = $"10,1,0,{direction.x},{direction.z},0";
+                writer.WriteLine(newLine);
+            }
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"Failed to write to CSV file: {e.Message}");
+        }
     }
 
     private void UnlockCursor()
@@ -611,61 +615,71 @@ public class grad_local : MonoBehaviour
         return true;
     }
 
-    private Vector3[] create_cp(int num, int range, int dir, Vector3 ref_point, List<Vector3> obstacle_positions)
+    private Vector3[] CreateCheckpoints(int count, int range, int direction, Vector3 referencePoint, List<Vector3> obstaclePositions)
     {
-        Vector3[] cp = new Vector3[num];
+        Vector3[] checkpoints = new Vector3[count];
         float rangeFactor = (float)(range + 1) / 100f;
 
-        for (int i = 0; i < num; i++)
+        for (int i = 0; i < count; i++)
         {
             float x_min, x_max, z_min, z_max;
-            switch (dir)
-            {
-                case 1:
-                    x_min = ref_point.x;
-                    x_max = ref_point.x + (1024f - ref_point.x) * rangeFactor;
-                    z_min = ref_point.z;
-                    z_max = ref_point.z + (1024f - ref_point.z) * rangeFactor;
-                    break;
-                case 2:
-                    x_min = ref_point.x - ref_point.x * rangeFactor;
-                    x_max = ref_point.x;
-                    z_min = ref_point.z;
-                    z_max = ref_point.z + (1024f - ref_point.z) * rangeFactor;
-                    break;
-                case 3:
-                    x_min = ref_point.x - ref_point.x * rangeFactor;
-                    x_max = ref_point.x;
-                    z_min = ref_point.z - ref_point.z * rangeFactor;
-                    z_max = ref_point.z;
-                    break;
-                case 4:
-                    x_min = ref_point.x;
-                    x_max = ref_point.x + (1024f - ref_point.x) * rangeFactor;
-                    z_min = ref_point.z - ref_point.z * rangeFactor;
-                    z_max = ref_point.z;
-                    break;
-                default:
-                    x_min = x_max = ref_point.x;
-                    z_min = z_max = ref_point.z;
-                    Debug.LogError("Invalid direction value");
-                    break;
-            }
+            CalculateCheckpointBounds(direction, referencePoint, rangeFactor, out x_min, out x_max, out z_min, out z_max);
 
             int tryCount = 0;
             bool valid = false;
             Vector3 candidate = Vector3.zero;
             while (!valid && tryCount < CpPlaceMaxTries)
             {
-                float x = UnityEngine.Random.Range(x_min, x_max);
-                float z = UnityEngine.Random.Range(z_min, z_max);
-                candidate = new Vector3(x, 0, z);
-                valid = IsClearOfObstacles(candidate, obstacle_positions);
+                candidate = CreateCheckpointCandidate(x_min, x_max, z_min, z_max);
+                valid = IsClearOfObstacles(candidate, obstaclePositions);
                 tryCount++;
             }
-            cp[i] = candidate;
+            checkpoints[i] = candidate;
         }
-        return cp;
+        return checkpoints;
+    }
+
+    private static void CalculateCheckpointBounds(int direction, Vector3 referencePoint, float rangeFactor, out float xMin, out float xMax, out float zMin, out float zMax)
+    {
+        switch (direction)
+        {
+            case 1:
+                xMin = referencePoint.x;
+                xMax = referencePoint.x + (1024f - referencePoint.x) * rangeFactor;
+                zMin = referencePoint.z;
+                zMax = referencePoint.z + (1024f - referencePoint.z) * rangeFactor;
+                break;
+            case 2:
+                xMin = referencePoint.x - referencePoint.x * rangeFactor;
+                xMax = referencePoint.x;
+                zMin = referencePoint.z;
+                zMax = referencePoint.z + (1024f - referencePoint.z) * rangeFactor;
+                break;
+            case 3:
+                xMin = referencePoint.x - referencePoint.x * rangeFactor;
+                xMax = referencePoint.x;
+                zMin = referencePoint.z - referencePoint.z * rangeFactor;
+                zMax = referencePoint.z;
+                break;
+            case 4:
+                xMin = referencePoint.x;
+                xMax = referencePoint.x + (1024f - referencePoint.x) * rangeFactor;
+                zMin = referencePoint.z - referencePoint.z * rangeFactor;
+                zMax = referencePoint.z;
+                break;
+            default:
+                xMin = xMax = referencePoint.x;
+                zMin = zMax = referencePoint.z;
+                Debug.LogError("Invalid direction value");
+                break;
+        }
+    }
+
+    private static Vector3 CreateCheckpointCandidate(float xMin, float xMax, float zMin, float zMax)
+    {
+        float x = UnityEngine.Random.Range(xMin, xMax);
+        float z = UnityEngine.Random.Range(zMin, zMax);
+        return new Vector3(x, 0, z);
     }
 
     
@@ -675,42 +689,54 @@ public class grad_local : MonoBehaviour
         if (condition.Contains("Bug_occurred"))
         {
             Debug.Log("Bug detected");
-            
-            MutateParam();
-            Application.logMessageReceived -= OnLogMessageReceived;
-            Scene scene = SceneManager.GetActiveScene(); 
-            SceneManager.LoadScene(scene.path); 
+            RestartExperiment();
             return;
         }
     }
 
-    // Settin a play style
+    // Setting a play style
     private void MutateParam()
     {
         /* This method is using "Play Style A". */
-        int maxNum = 100; 
-        int maxRange = 100; 
+        string nextType = ReadLatestFuzzType();
+        AppendLocalParameters(nextType);
+    }
+
+    private static string ReadLatestFuzzType()
+    {
         List<string> typeLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")));
-        string nextType = typeLines[typeLines.Count - 1];
+        return typeLines[typeLines.Count - 1];
+    }
+
+    private void AppendLocalParameters(string nextType)
+    {
         List<string> csvLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv")));
         if (nextType == "init")
         {
             Debug.Log("Since the next is global fuzzing, initializing local parameters.");
-            
-            csvLines.Add($"{cpNum1},{cpNum2},{cpNum3},{cpNum4},{cpNum5},{cpNum6},{cpNum7},{cpNum8},{cpNum9},{cpNum10}," +
-                $"{cpNum1_range},{cpNum2_range},{cpNum3_range},{cpNum4_range},{cpNum5_range},{cpNum6_range},{cpNum7_range},{cpNum8_range},{cpNum9_range},{cpNum10_range}," +
-                $"{cpNum1_dir},{cpNum2_dir},{cpNum3_dir},{cpNum4_dir},{cpNum5_dir},{cpNum6_dir},{cpNum7_dir},{cpNum8_dir},{cpNum9_dir},{cpNum10_dir}");
+            csvLines.Add(CreateDefaultLocalParameterRow());
         }
         else
         {
             Debug.Log("Since the next is local fuzzing, mutating local parameters.");
-            
-            csvLines.Add($"{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)},{UnityEngine.Random.Range(0, maxNum)}," +
-                $"{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)},{UnityEngine.Random.Range(0, maxRange)}," +
-                $"{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)}");
+            csvLines.Add(CreateMutatedLocalParameterRow(100, 100));
         }
-        
+
         File.WriteAllLines(Path.Combine(Application.dataPath, "Logs", "param_local.csv"), csvLines.ToArray());
+    }
+
+    private string CreateDefaultLocalParameterRow()
+    {
+        return $"{cpNum1},{cpNum2},{cpNum3},{cpNum4},{cpNum5},{cpNum6},{cpNum7},{cpNum8},{cpNum9},{cpNum10}," +
+            $"{cpNum1_range},{cpNum2_range},{cpNum3_range},{cpNum4_range},{cpNum5_range},{cpNum6_range},{cpNum7_range},{cpNum8_range},{cpNum9_range},{cpNum10_range}," +
+            $"{cpNum1_dir},{cpNum2_dir},{cpNum3_dir},{cpNum4_dir},{cpNum5_dir},{cpNum6_dir},{cpNum7_dir},{cpNum8_dir},{cpNum9_dir},{cpNum10_dir}";
+    }
+
+    private static string CreateMutatedLocalParameterRow(int maximumCount, int maximumRange)
+    {
+        return $"{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)},{UnityEngine.Random.Range(0, maximumCount)}," +
+                $"{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)},{UnityEngine.Random.Range(0, maximumRange)}," +
+                $"{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)},{UnityEngine.Random.Range(1, 5)}";
     }
 
     //    private void MutateParam()

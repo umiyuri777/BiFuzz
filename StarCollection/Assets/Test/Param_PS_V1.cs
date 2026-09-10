@@ -7,7 +7,7 @@ using System.Linq;
 
 public class Param_PS_V1 : MonoBehaviour
 {
-    
+
     CharacterController con;  
     Animator anim;            
     CinemachineFreeLook freeLook; 
@@ -51,25 +51,32 @@ public class Param_PS_V1 : MonoBehaviour
     public void PlayerStart()
     {
         Debug.Log("Number of restarts: " + PlayerPrefs.GetInt("restartCount", -1));
-        
+
+        InitializePlayerDependencies();
+
+        RestoreVisitedPositions();
+
+        LoadReplayData();
+
+        InitializeItemLog();
+    }
+
+    private void InitializePlayerDependencies()
+    {
         con = GetComponent<CharacterController>();
         anim = GetComponent<Animator>();
         paramMutate = GameObject.Find("Param_Mutate").GetComponent<Param_Mutate>();
         mapCoverage = GetComponent<MapCoverage>();
         bugAlerts = new List<test_BugAlert>(FindObjectsOfType<test_BugAlert>());
-
-        
         freeLookCamera = GameObject.Find("FreeLook Camera");
         freeLook = freeLookCamera.GetComponent<CinemachineFreeLook>();
-
-        
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
-
-        
         startPos = transform.position;
+    }
 
-        
+    private void RestoreVisitedPositions()
+    {
         mapCoverage.visitedPositions.Clear();
         string serializedPositions = PlayerPrefs.GetString("visitedPositions", "");
         if (!string.IsNullOrEmpty(serializedPositions))
@@ -83,16 +90,17 @@ public class Param_PS_V1 : MonoBehaviour
                 mapCoverage.visitedPositions.Add(new Vector2(x, y));
             }
         }
+    }
 
+    private void LoadReplayData()
+    {
         string csvFilePath = Path.Combine(Application.dataPath, "Logs", "player_data_mutated.csv");
-        
         if (File.Exists(csvFilePath))
         {
             csvData = new List<string[]>();
             using (StreamReader sr = new StreamReader(csvFilePath))
             {
                 string line;
-                
                 sr.ReadLine();
                 while ((line = sr.ReadLine()) != null)
                 {
@@ -104,30 +112,32 @@ public class Param_PS_V1 : MonoBehaviour
         {
             Debug.LogError("CSV file not found: " + csvFilePath);
         }
+    }
 
-        
-        if (!File.Exists(itemFilePath)) 
+    private void InitializeItemLog()
+    {
+        if (!File.Exists(itemFilePath))
         {
             using (StreamWriter sw = new StreamWriter(itemFilePath, false))
             {
-                sw.WriteLine("Name,Count"); 
+                sw.WriteLine("Name,Count");
                 Debug.Log("Created item log file and set column names");
             }
         }
         else
         {
-            List<string> itemList = new List<string>(); 
-            string[] lines = File.ReadAllLines(itemFilePath); 
-            for (int i = 1; i < lines.Length; i++) 
+            List<string> itemList = new List<string>();
+            string[] lines = File.ReadAllLines(itemFilePath);
+            for (int i = 1; i < lines.Length; i++)
             {
-                string[] columns = lines[i].Split(','); 
-                if (columns.Length > 0) 
+                string[] columns = lines[i].Split(',');
+                if (columns.Length > 0)
                 {
                     itemList.Add(columns[0]);
                 }
             }
 
-            retrievedItems = itemList.Distinct().ToArray(); 
+            retrievedItems = itemList.Distinct().ToArray();
             Debug.Log("Loaded from item log file");
         }
     }
@@ -485,7 +495,11 @@ public class Param_PS_V1 : MonoBehaviour
                 }
                 else
                 {
+#if UNITY_EDITOR
                     UnityEditor.EditorApplication.isPlaying = false;
+#else
+                    Application.Quit();
+#endif
                 }
             }
         }
@@ -732,7 +746,11 @@ public class Param_PS_V1 : MonoBehaviour
             }
             else
             {
+#if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
+#else
+                Application.Quit();
+#endif
             }
         }
     }

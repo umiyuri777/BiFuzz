@@ -8,13 +8,12 @@ public class BackButtonAction : MonoBehaviour
 {
     public Button button;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        button.onClick.AddListener(SceneSwitcher);
+        button.onClick.AddListener(LoadPreviousScene);
     }
 
-    void SceneSwitcher()
+    private void LoadPreviousScene()
     {
         
         int previousSceneIndex = SceneManager.GetActiveScene().buildIndex - 1;

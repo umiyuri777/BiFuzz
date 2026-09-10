@@ -17,7 +17,7 @@ public class ScoringSystem : MonoBehaviour
         vector3SoftStar1 = GameObject.Find("SoftStar 1").transform.position;
     }
 
-    void Update()
+    private void Update()
     {
         if(Vector3.Distance(this.transform.position, vector3SoftStar1) <= 1f)
         {

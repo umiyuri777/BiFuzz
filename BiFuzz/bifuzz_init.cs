@@ -3,10 +3,7 @@ using UnityEngine;
 using Cinemachine;
 using System.IO;
 using System.Linq;
-using NUnit.Framework.Internal.Builders;
 using UnityEngine.SceneManagement;
-using System;
-using UnityEditor.SceneManagement;
 
 public class grad_init : MonoBehaviour
 {
@@ -101,7 +98,6 @@ public class grad_init : MonoBehaviour
     
     Vector3 postPos = Vector3.zero;
     Vector3 nowPos = Vector3.zero;
-    Vector3 fixed_nowPos = Vector3.zero;
     int avdCnt = 0;
     bool isAvding = false;
     bool isAvoidRight = false;
@@ -109,50 +105,31 @@ public class grad_init : MonoBehaviour
     
     string filePath = Path.Combine(Application.dataPath, "Logs", "init_fuzz.csv");
 
-    void Start()
+    private void Start()
     {
+        RecordDetectionMode();
+        EnsureGlobalParameterFile();
         
-        try
-        {
-            
-            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"), true))
-            {
-                writer.WriteLine("init");
-            }
-        }
-        catch (IOException e)
-        {
-            Debug.LogError($"Failed to create CSV file: {e.Message}");
-        }
-
-        
-        if (!File.Exists(Path.Combine(Application.dataPath, "Logs", "param_global.csv")))
-        {
-            try
-            {
-                
-                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "param_global.csv"), false))
-                {
-                    
-                    writer.WriteLine("ss1,ss2,ss3,ss4,ss5,ss6,ss7,ss8,ss9,ss10,ss1_pri,ss2_pri,ss3_pri,ss4_pri,ss5_pri,ss6_pri,ss7_pri,ss8_pri,ss9_pri,ss10_pri");
-                    writer.WriteLine($"{ss1},{ss2},{ss3},{ss4},{ss5},{ss6},{ss7},{ss8},{ss9},{ss10},{ss1_pri},{ss2_pri},{ss3_pri},{ss4_pri},{ss5_pri},{ss6_pri},{ss7_pri},{ss8_pri},{ss9_pri},{ss10_pri}");
-                    Debug.Log($"Parameters recorded: param_global.csv");
-                }
-            }
-            catch (IOException e)
-            {
-                Debug.LogError($"Failed to create CSV file: {e.Message}");
-            }
-        }
-
-        
-        List<string> paramLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_global.csv")));
-        string paramLastLine = paramLines[paramLines.Count - 1];
-        string[] paramColumns = paramLastLine.Split(',');
+        string[] paramColumns = ReadLatestGlobalParameters();
         Debug.Log("ss1: " + bool.Parse(paramColumns[0]));
         Debug.Log("ss10_pri: " + int.Parse(paramColumns[19]));
 
-        
+        BuildSpawnSpotInfo(paramColumns);
+        BuildStrategy();
+        WriteCheckpoints();
+        InitializeRuntimeDependencies();
+        InitializeFuzzLog();
+    }
+
+    private static string[] ReadLatestGlobalParameters()
+    {
+        List<string> paramLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_global.csv")));
+        string paramLastLine = paramLines[paramLines.Count - 1];
+        return paramLastLine.Split(',');
+    }
+
+    private void BuildSpawnSpotInfo(string[] paramColumns)
+    {
         ss_info = new ss[10];
         ss_info[0] = new ss(1, bool.Parse(paramColumns[0]), int.Parse(paramColumns[10]), ss1_loc);
         ss_info[1] = new ss(2, bool.Parse(paramColumns[1]), int.Parse(paramColumns[11]), ss2_loc);
@@ -164,46 +141,47 @@ public class grad_init : MonoBehaviour
         ss_info[7] = new ss(8, bool.Parse(paramColumns[7]), int.Parse(paramColumns[17]), ss8_loc);
         ss_info[8] = new ss(9, bool.Parse(paramColumns[8]), int.Parse(paramColumns[18]), ss9_loc);
         ss_info[9] = new ss(10, bool.Parse(paramColumns[9]), int.Parse(paramColumns[19]), ss10_loc);
+    }
 
-        
+    private void BuildStrategy()
+    {
         System.Random random = new System.Random();
         strategy = ss_info.Where(i => i.on).OrderByDescending(i => i.pri).ThenBy(i => random.Next()).ToArray();
+    }
 
-        
+    private void RecordDetectionMode()
+    {
         try
         {
-            
-            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "check_points.csv"), false))
+            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "detected_bugs.csv"), true))
             {
-                writer.WriteLine("index,x,y,z"); 
+                writer.WriteLine("init");
             }
         }
         catch (IOException e)
         {
             Debug.LogError($"Failed to create CSV file: {e.Message}");
         }
+    }
 
-        
-        Debug.Log("=== Sorted array ===");
-        foreach (var i in strategy)
+    private void InitializeFuzzLog()
+    {
+        try
         {
-            Debug.Log($"Index: {i.index}, Priority: {i.pri}, Location: {i.loc}");
-            
-            try
+            using (StreamWriter writer = new StreamWriter(filePath, false))
             {
-                
-                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "check_points.csv"), true))
-                {
-                    writer.WriteLine($"{i.index},{i.loc.x},{i.loc.y},{i.loc.z}");
-                }
-            }
-            catch (IOException e)
-            {
-                Debug.LogError($"Failed to create CSV file: {e.Message}");
+                writer.WriteLine("speed,v,h,forwardX,forwardZ,jump,item");
+                Debug.Log($"Created CSV file 'init_fuzz.csv': {filePath}");
             }
         }
+        catch (IOException e)
+        {
+            Debug.LogError($"Failed to create CSV file: {e.Message}");
+        }
+    }
 
-        
+    private void InitializeRuntimeDependencies()
+    {
         GameObject stuckBugsObject = GameObject.Find("StuckBugs");
         if (stuckBugsObject != null)
         {
@@ -220,18 +198,55 @@ public class grad_init : MonoBehaviour
         freeLookCamera = GameObject.Find("FreeLook Camera");
         freeLook = freeLookCamera.GetComponent<CinemachineFreeLook>();
         LockCursor();
-
         frameIndex = 0;
+    }
 
-        
+    private void WriteCheckpoints()
+    {
         try
         {
-            
-            using (StreamWriter writer = new StreamWriter(filePath, false))
+            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "check_points.csv"), false))
             {
-                
-                writer.WriteLine("speed,v,h,forwardX,forwardZ,jump,item");
-                Debug.Log($"Created CSV file 'init_fuzz.csv': {filePath}");
+                writer.WriteLine("index,x,y,z");
+            }
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"Failed to create CSV file: {e.Message}");
+        }
+
+        Debug.Log("=== Sorted array ===");
+        foreach (var i in strategy)
+        {
+            Debug.Log($"Index: {i.index}, Priority: {i.pri}, Location: {i.loc}");
+            try
+            {
+                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "check_points.csv"), true))
+                {
+                    writer.WriteLine($"{i.index},{i.loc.x},{i.loc.y},{i.loc.z}");
+                }
+            }
+            catch (IOException e)
+            {
+                Debug.LogError($"Failed to create CSV file: {e.Message}");
+            }
+        }
+    }
+
+    private void EnsureGlobalParameterFile()
+    {
+        if (File.Exists(Path.Combine(Application.dataPath, "Logs", "param_global.csv")))
+        {
+            return;
+        }
+
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "param_global.csv"), false))
+            {
+                writer.WriteLine("ss1,ss2,ss3,ss4,ss5,ss6,ss7,ss8,ss9,ss10,ss1_pri,ss2_pri,ss3_pri,ss4_pri,ss5_pri,ss6_pri,ss7_pri,ss8_pri,ss9_pri,ss10_pri");
+                writer.WriteLine($"{ss1},{ss2},{ss3},{ss4},{ss5},{ss6},{ss7},{ss8},{ss9},{ss10},{ss1_pri},{ss2_pri},{ss3_pri},{ss4_pri},{ss5_pri},{ss6_pri},{ss7_pri},{ss8_pri},{ss9_pri},{ss10_pri}");
+                Debug.Log($"Parameters recorded: param_global.csv");
             }
         }
         catch (IOException e)
@@ -240,7 +255,7 @@ public class grad_init : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
@@ -255,19 +270,7 @@ public class grad_init : MonoBehaviour
             ss1_pri++;
             Debug.Log("Timeout");
             
-            if (File.Exists(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")))
-            {
-                using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv"), true))
-                {
-                    writer.WriteLine("init");
-                }
-                Debug.Log("Wrote to fuzz_type.csv file.");
-            }
-            else
-            {
-                Debug.Log("Error: fuzz_type.csv file does not exist.");
-                UnityEditor.EditorApplication.isPlaying = false;
-            }
+            AppendFuzzType("init");
             MutateParam();
             Scene scene = SceneManager.GetActiveScene(); 
             SceneManager.LoadScene(scene.path); 
@@ -297,19 +300,7 @@ public class grad_init : MonoBehaviour
                 ss1_pri++;
                 Debug.Log("Initial input generation complete");
                 
-                if (File.Exists(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv")))
-                {
-                    using (StreamWriter writer = new StreamWriter(Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv"), true))
-                    {
-                        writer.WriteLine("local");
-                    }
-                    Debug.Log("Wrote to fuzz_type.csv file.");
-                }
-                else
-                {
-                    Debug.Log("Error: fuzz_type.csv file does not exist.");
-                    UnityEditor.EditorApplication.isPlaying = false;
-                }
+                AppendFuzzType("local");
                 MutateParam();
                 Scene scene = SceneManager.GetActiveScene(); 
                 SceneManager.LoadScene(scene.path); 
@@ -319,112 +310,11 @@ public class grad_init : MonoBehaviour
         }
 
         
-        if (frameIndex % 60 == 0)
-        {
-            float distance = Vector3.Distance(new Vector3(postPos.x, 0, postPos.z), new Vector3(nowPos.x, 0, nowPos.z));
-            if(distance < 1f)
-            {
-                isAvding = true;
-            }
-            postPos = nowPos;
-        }
+        DetectStoppedMovement();
 
-        Vector3 moveZ;
-        Vector3 moveX;
-        Vector3 direction;
-        if (isAvding == false)
-        {
-            
-            direction = new Vector3(strategy[0].loc.x - nowPos.x, 0f, strategy[0].loc.z - nowPos.z).normalized;
-            moveZ = direction * 1 * sprintSpeed;
-            moveX = new Vector3(0f, 0f, 0f);
-        }
-        else
-        {
-            if(avdCnt == 0) 
-            {
-                Vector3 forwardDirection = transform.forward;
-                direction = new Vector3(-transform.forward.x, transform.forward.y, -transform.forward.z);
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt < 60) 
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if(avdCnt == 60) 
-            {
-                int i = UnityEngine.Random.Range(0, 2);
-                if (i == 0) 
-                {
-                    isAvoidRight = false;
-                    direction = -transform.right;
-                }
-                else 
-                {
-                    isAvoidRight = true;
-                    direction = transform.right;
-                }
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt < 120) 
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt == 120) 
-            {
-                if (!isAvoidRight)
-                {
-                    direction = -transform.right;
-                }
-                else
-                {
-                    direction = transform.right;
-                }
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else if (avdCnt < 239)
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt++;
-            }
-            else // avdCnt == 239
-            {
-                direction = transform.forward;
-                moveZ = direction * 1 * sprintSpeed;
-                moveX = new Vector3(0f, 0f, 0f);
-                avdCnt = 0;
-                isAvding = false;
-            }
-        }
+        CalculateMovement(out Vector3 direction, out Vector3 moveZ, out Vector3 moveX);
 
-        
-        try
-        {
-            using (StreamWriter writer = new StreamWriter(filePath, true))
-            {
-                string newLine = $"10,1,0,{direction.x},{direction.z},0,";
-                writer.WriteLine(newLine);
-                
-            }
-        }
-        catch (IOException e)
-        {
-            Debug.LogError($"Failed to write to CSV file: {e.Message}");
-        }
+        WriteFuzzFrame(direction);
 
         if (controller.isGrounded)
         {
@@ -442,12 +332,133 @@ public class grad_init : MonoBehaviour
         frameIndex++;
     }
 
+    private void DetectStoppedMovement()
+    {
+        if (frameIndex % 60 != 0)
+        {
+            return;
+        }
+
+        float distance = Vector3.Distance(new Vector3(postPos.x, 0, postPos.z), new Vector3(nowPos.x, 0, nowPos.z));
+        if (distance < 1f)
+        {
+            isAvding = true;
+        }
+        postPos = nowPos;
+    }
+
+    private void CalculateMovement(out Vector3 direction, out Vector3 moveZ, out Vector3 moveX)
+    {
+        if (!isAvding)
+        {
+            direction = new Vector3(strategy[0].loc.x - nowPos.x, 0f, strategy[0].loc.z - nowPos.z).normalized;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            return;
+        }
+
+        if (avdCnt == 0)
+        {
+            direction = new Vector3(-transform.forward.x, transform.forward.y, -transform.forward.z);
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt < 60)
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt == 60)
+        {
+            int i = UnityEngine.Random.Range(0, 2);
+            if (i == 0)
+            {
+                isAvoidRight = false;
+                direction = -transform.right;
+            }
+            else
+            {
+                isAvoidRight = true;
+                direction = transform.right;
+            }
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt < 120)
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt == 120)
+        {
+            direction = !isAvoidRight ? -transform.right : transform.right;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else if (avdCnt < 239)
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt++;
+        }
+        else
+        {
+            direction = transform.forward;
+            moveZ = direction * 1 * sprintSpeed;
+            moveX = new Vector3(0f, 0f, 0f);
+            avdCnt = 0;
+            isAvding = false;
+        }
+    }
+
     private void LockCursor()
     {
         Cursor.visible = false;
         Cursor.lockState = CursorLockMode.Locked;
         SetFreeLookSpeed(900, 6);
         isCursorLocked = true;
+    }
+
+    private void WriteFuzzFrame(Vector3 direction)
+    {
+        try
+        {
+            using (StreamWriter writer = new StreamWriter(filePath, true))
+            {
+                string newLine = $"10,1,0,{direction.x},{direction.z},0,";
+                writer.WriteLine(newLine);
+            }
+        }
+        catch (IOException e)
+        {
+            Debug.LogError($"Failed to write to CSV file: {e.Message}");
+        }
+    }
+
+    private void AppendFuzzType(string fuzzType)
+    {
+        string fuzzTypePath = Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv");
+        if (File.Exists(fuzzTypePath))
+        {
+            using (StreamWriter writer = new StreamWriter(fuzzTypePath, true))
+            {
+                writer.WriteLine(fuzzType);
+            }
+            Debug.Log("Wrote to fuzz_type.csv file.");
+        }
+        else
+        {
+            Debug.Log("Error: fuzz_type.csv file does not exist.");
+            UnityEditor.EditorApplication.isPlaying = false;
+        }
     }
 
     private void UnlockCursor()
@@ -476,33 +487,40 @@ public class grad_init : MonoBehaviour
     private void MutateParam()
     {
         /* This method is using "Play Style A". */
-        int minNum = 1; 
-        int maxNum = 11; 
-        
-        bool[] boolArray = new bool[10];
-        
-        for (int i = 0; i < boolArray.Length; i++)
+        bool[] enabledSpawnSpots = CreateEnabledSpawnSpots(1, 11);
+        AppendGlobalParameters(enabledSpawnSpots);
+    }
+
+    private static bool[] CreateEnabledSpawnSpots(int minimumCount, int maximumCount)
+    {
+        bool[] enabledSpawnSpots = new bool[10];
+
+        for (int i = 0; i < enabledSpawnSpots.Length; i++)
         {
-            boolArray[i] = false;
+            enabledSpawnSpots[i] = false;
         }
 
-        
         int trueCount = 0;
-        while (trueCount < UnityEngine.Random.Range(minNum, maxNum))
+        while (trueCount < UnityEngine.Random.Range(minimumCount, maximumCount))
         {
-            int randomIndex = UnityEngine.Random.Range(0, boolArray.Length);
-            if (!boolArray[randomIndex])  
+            int randomIndex = UnityEngine.Random.Range(0, enabledSpawnSpots.Length);
+            if (!enabledSpawnSpots[randomIndex])
             {
-                boolArray[randomIndex] = true;
+                enabledSpawnSpots[randomIndex] = true;
                 trueCount++;
             }
         }
 
+        return enabledSpawnSpots;
+    }
+
+    private static void AppendGlobalParameters(bool[] enabledSpawnSpots)
+    {
         List<string> csvLines = new List<string>(File.ReadAllLines(Path.Combine(Application.dataPath, "Logs", "param_global.csv")));
         Debug.Log("Since the next is local fuzzing, mutating local parameters.");
-        csvLines.Add($"{boolArray[0]},{boolArray[1]},{boolArray[2]},{boolArray[3]},{boolArray[4]},{boolArray[5]},{boolArray[6]},{boolArray[7]},{boolArray[8]},{boolArray[9]}," +
+        csvLines.Add($"{enabledSpawnSpots[0]},{enabledSpawnSpots[1]},{enabledSpawnSpots[2]},{enabledSpawnSpots[3]},{enabledSpawnSpots[4]},{enabledSpawnSpots[5]},{enabledSpawnSpots[6]},{enabledSpawnSpots[7]},{enabledSpawnSpots[8]},{enabledSpawnSpots[9]}," +
             $"{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)},{UnityEngine.Random.Range(0, 10)}");
-        
+
         File.WriteAllLines(Path.Combine(Application.dataPath, "Logs", "param_global.csv"), csvLines.ToArray());
     }
 

@@ -8,8 +8,7 @@ public class fuzz_select : MonoBehaviour
     
     string filePath = Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv");
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         
         if (!File.Exists(filePath))
@@ -26,14 +25,7 @@ public class fuzz_select : MonoBehaviour
         }
 
         
-        string lastLine = null;
-        using (StreamReader reader = new StreamReader(filePath))
-        {
-            while (!reader.EndOfStream)
-            {
-                lastLine = reader.ReadLine();
-            }
-        }
+        string lastLine = ReadLastLine();
 
         switch (lastLine)
         {
@@ -50,9 +42,17 @@ public class fuzz_select : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    private string ReadLastLine()
     {
-        
+        string lastLine = null;
+        using (StreamReader reader = new StreamReader(filePath))
+        {
+            while (!reader.EndOfStream)
+            {
+                lastLine = reader.ReadLine();
+            }
+        }
+
+        return lastLine;
     }
 }

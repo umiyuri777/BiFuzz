@@ -8,9 +8,7 @@ using UnityEngine.UIElements;
 public class TestSheep : MonoBehaviour
 {
     private Animator animator;              
-    private NavMeshAgent agent;             
     public Transform target;                
-    private Rigidbody rb;
 
     Vector3 newPosition;                    
     Vector3 evadeDestination;               
@@ -22,12 +20,9 @@ public class TestSheep : MonoBehaviour
     private PlayerScript playerScript;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         animator = GetComponent<Animator>();    
-        agent = GetComponent<NavMeshAgent>();   
-        
-        rb = GetComponent<Rigidbody>();
         newPosition = this.transform.position;  
         evadeDestination = this.transform.position;
 
@@ -36,7 +31,7 @@ public class TestSheep : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if(hitPoint <= 0)
         {

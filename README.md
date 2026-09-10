@@ -5,17 +5,17 @@
 
 # Requirements
 ## IDE
-Unity 2022.3.12f1
+Unity 6000.3.23f1
 
 # How to Use BiFuzz
-1. Store the 'BiFuzz' directory in the 'Assets' directory of the target video game and open the project in Unity Editor.
-2. Attach all the scripts in 'BiFuzz' directory to a player's character object.
+1. Copy the scripts in `BiFuzz/` to `StarCollection/Assets/BiFuzz/` and open `StarCollection` in Unity Editor.
+2. Open `Assets/Scenes/Game.unity` and attach all five BiFuzz scripts to `DogPolyart`.
 3. When you attach a script, it becomes a component. In the added component, uncheck 'Grad_init' and 'Grad_local' to disable them.
 4. Set the 'Grad_init' and 'Grad_local' components of the player's character object as shown in the image below. Even if there is no change from initial values, be sure to move sliders and re-enter the values.
     <img src="README_Images/Grad_init.png" width="50%">
     <img src="README_Images/Grad_local.png" width="50%">
-5. Assign the number of frames the test will run to the variable exeTime in Assets/BiFuzz/ExeTime.cs.
-6. Empty Assets/Logs and run the scene. Test results will be saved as a CSV file in Assets/Logs.
+5. Assign the number of frames the test will run to `exeTime` in `Assets/BiFuzz/ExeTime.cs`.
+6. Keep `PlayerScript` disabled, empty `Assets/Logs`, and run the scene. Test results are saved as CSV files in `Assets/Logs`.
 
 # Directory Structure
 <pre>

@@ -15,7 +15,7 @@ public class MapCoverage : MonoBehaviour
     
     public float coveragePercentage;
 
-    void Start()
+    private void Start()
     {
         
         mapArea = (mapMax.x - mapMin.x) * (mapMax.y - mapMin.y);
@@ -29,7 +29,7 @@ public class MapCoverage : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
@@ -53,7 +53,7 @@ public class MapCoverage : MonoBehaviour
         //Debug.Log("Map Coverage: " + coveragePercentage + "%");
     }
 
-    void AddPositionsOnLine(Vector2 start, Vector2 end)
+    private void AddPositionsOnLine(Vector2 start, Vector2 end)
     {
         int steps = Mathf.CeilToInt(Vector2.Distance(start, end) / 0.1f); 
         for (int i = 0; i <= steps; i++)
@@ -64,7 +64,7 @@ public class MapCoverage : MonoBehaviour
         }
     }
 
-    float CalculateCoveragePercentage()
+    private float CalculateCoveragePercentage()
     {
         
         float visitedArea = visitedPositions.Count;

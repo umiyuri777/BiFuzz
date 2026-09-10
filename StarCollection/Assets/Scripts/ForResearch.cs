@@ -3,7 +3,7 @@ using UnityEngine.AI;
 
 public class NavMeshPolygonCounter : MonoBehaviour
 {
-    void Start()
+    private void Start()
     {
         //NavMesh navMesh = GetComponent<NavMesh>();
         //int polygonCount = navMesh.triangles.Length / 3;

@@ -9,7 +9,7 @@ public class MiniMapZoom : MonoBehaviour
     private int zoomIn = 500;
     private int zoomOut = 150;
 
-    void Start()
+    private void Start()
     {
         rectTransform = GetComponent<RectTransform>();
         child1RectTransform = transform.GetChild(0).GetComponent<RectTransform>();
@@ -17,7 +17,7 @@ public class MiniMapZoom : MonoBehaviour
         child2RectTransform = transform.GetChild(0).GetChild(0).GetComponent<RectTransform>();
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.M))
         {

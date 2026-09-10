@@ -8,13 +8,12 @@ public class HowToPlayButtonAction : MonoBehaviour
 {
     public Button button;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        button.onClick.AddListener(SceneSwitcher);
+        button.onClick.AddListener(LoadHowToPlayScene);
     }
 
-    void SceneSwitcher()
+    private void LoadHowToPlayScene()
     {
         SceneManager.LoadScene("HowToPlay");
     }

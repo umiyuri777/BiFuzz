@@ -27,7 +27,7 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
     private List<string[]> csvData;
     private int currentFrameIndex;
 
-    void Start()
+    private void Start()
     {
         con = GetComponent<CharacterController>();
         anim = GetComponent<Animator>();
@@ -61,7 +61,7 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
         currentFrameIndex = 0;
     }
 
-    void MutateData()
+    private void MutateData()
     {
         float moveZ_x_mean = 0f, moveZ_z_mean = 0f, moveX_x_mean = 0f, moveX_z_mean = 0f;
         float moveZ_x_std = 0f, moveZ_z_std = 0f, moveX_x_std = 0f, moveX_z_std = 0f;
@@ -187,7 +187,7 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
         }
     }
 
-    float Mean(List<float> values)
+    private float Mean(List<float> values)
     {
         float sum = 0f;
         foreach (float val in values)
@@ -197,7 +197,7 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
         return sum / values.Count;
     }
 
-    float StandardDeviation(List<float> values, float mean)
+    private float StandardDeviation(List<float> values, float mean)
     {
         float sumOfSquares = 0f;
         foreach (float val in values)
@@ -207,16 +207,16 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
         return Mathf.Sqrt(sumOfSquares / values.Count);
     }
 
-    float StandardScore(float value, float mean, float std)
+    private float StandardScore(float value, float mean, float std)
     {
         return 50 + 10 * ((value - mean) / std);
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
-            mouseCursor();
+            ToggleMouseCursor();
         }
 
         anim.SetBool("LeftClick", false);
@@ -256,10 +256,7 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
         }
         else if (currentFrameIndex >= csvData.Count)
         {
-            Application.Quit();
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#endif
+            StopReplay();
         }
     }
 
@@ -273,7 +270,15 @@ public class test_PlayerScript_Mutate_Deviation_Replay : MonoBehaviour
         isAttacking = false;
     }
 
-    private void mouseCursor()
+    private void StopReplay()
+    {
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+    }
+
+    private void ToggleMouseCursor()
     {
         if (isPushedM)
         {

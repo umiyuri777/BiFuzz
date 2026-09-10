@@ -2,7 +2,7 @@
 This is the target video game applying BiFuzz in the experiment of the paper.
 
 ## IDE
-Unity 2022.3.12f1
+Unity 6000.3.23f1
 
 ## Required Assets
 - [Dog Knight PBR Polyart](https://assetstore.unity.com/packages/3d/characters/animals/dog-knight-pbr-polyart-135227)
@@ -13,6 +13,6 @@ Unity 2022.3.12f1
 
 ## Prepare
 - Import all assets and run '_URP Content - Fantasy Worlds - Old Forest DEMO.unitypackage' from Assets\TriForge Assets.
-- Open the 'Prospect' scene in Assets/Scenes.
+- Open the `Game` scene in `Assets/Scenes`.
 - Replace the terrain layer with 'layer_grass01_bb3407d0e55802f81.terrainlayer'.
 - Use the Render Pipeline Converter to convert your materials to URP.

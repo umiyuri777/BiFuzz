@@ -7,7 +7,7 @@ public class ForceRenderRate : MonoBehaviour
     public float Rate = 50.0f;
     float currentFrameTime;
 
-    void Start()
+    private void Start()
     {
         QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 9999;
@@ -15,7 +15,7 @@ public class ForceRenderRate : MonoBehaviour
         StartCoroutine("WaitForNextFrame");
     }
 
-    IEnumerator WaitForNextFrame()
+    private IEnumerator WaitForNextFrame()
     {
         while (true)
         {

@@ -94,7 +94,51 @@ public class Param_Mutate : MonoBehaviour
 
     private void Start()
     {
+
+        CaptureOriginalParameters();
+
+        RestoreParametersFromPreferences();
+
+        WriteParameterLog();
+
+        int rowsNum = GetTotalRows("Assets/Logs/player_data.csv");
+        mutateRowMolded = mutateRow - 50;
+        int[] selectedRows = SelectMutatedIndex(rowsNum, mutateNum, mutateRowMolded);
+
+        forwardXBiasMolded = forwardXBias - 50;
+
+        int degSum = coverageDeg + itemDeg + interactionDeg;
+        float[] degs = new float[] { (float)coverageDeg / degSum, (float)itemDeg / degSum, (float)interactionDeg / degSum };
+
+        itemPriMolded = itemPri - 50;
+        int destItem = SelectMutatedIndex(10, 1, itemPriMolded)[0];
+
+        decisionVel = decisionVel * 60;
+
         
+        LoadCsvData("Assets/Logs/player_data.csv");
+        mutatedFilePath = "Assets/Logs/player_data_mutated.csv";
+        if (mutateNum != 0)
+        {
+            StaticMutate(selectedRows);
+        }
+        else
+        {
+            DynamicMutate();
+        }
+        SaveCsvData(mutatedFilePath);
+
+        playerObject = GameObject.FindGameObjectWithTag("Player").GetComponent<Param_PS_V1>();
+        playerObject.PlayerStart();
+    }
+
+    private void Update()
+    {
+        playerObject.PlayerUpdate();
+    }
+
+    private void CaptureOriginalParameters()
+    {
         orig_mutateNum = mutateNum;
         orig_mutateRow = mutateRow;
         orig_runRatio = runRatio;
@@ -110,8 +154,10 @@ public class Param_Mutate : MonoBehaviour
         orig_decisionVel = decisionVel;
         orig_directionAcc = directionAcc;
         orig_avoidInc = avoidInc;
+    }
 
-        
+    private void RestoreParametersFromPreferences()
+    {
         mutateNum = PlayerPrefs.GetInt("mutateNum", mutateNum);
         mutateRow = PlayerPrefs.GetInt("mutateRow", mutateRow);
         runRatio = PlayerPrefs.GetInt("runRatio", runRatio);
@@ -127,15 +173,17 @@ public class Param_Mutate : MonoBehaviour
         decisionVel = PlayerPrefs.GetInt("decisionVel", decisionVel);
         directionAcc = PlayerPrefs.GetInt("directionAcc", directionAcc);
         avoidInc = PlayerPrefs.GetInt("avoidInc", avoidInc);
+    }
 
-        
+    private void WriteParameterLog()
+    {
         string paramFilePath = Application.dataPath + "/Logs/params.csv";
-        if (!File.Exists(paramFilePath)) 
+        if (!File.Exists(paramFilePath))
         {
             using (StreamWriter sw = new StreamWriter(paramFilePath, false))
             {
-                sw.WriteLine("MutateNum,MutateRow,RunRatio,V1Ratio,H0Ratio,ForwardXBias,IsSameSignXZ,JumpRatio,CoverageDeg,ItemDeg,InteractionDeg,ItemPri,DecisionVel,DirectionAcc,AvoidInc"); 
-                sw.WriteLine($"{mutateNum},{mutateRow},{runRatio},{v1Ratio},{h0Ratio},{forwardXBias},{isSameSignXZ},{jumpRatio},{coverageDeg},{itemDeg},{interactionDeg},{itemPri},{decisionVel},{directionAcc},{avoidInc}"); 
+                sw.WriteLine("MutateNum,MutateRow,RunRatio,V1Ratio,H0Ratio,ForwardXBias,IsSameSignXZ,JumpRatio,CoverageDeg,ItemDeg,InteractionDeg,ItemPri,DecisionVel,DirectionAcc,AvoidInc");
+                sw.WriteLine($"{mutateNum},{mutateRow},{runRatio},{v1Ratio},{h0Ratio},{forwardXBias},{isSameSignXZ},{jumpRatio},{coverageDeg},{itemDeg},{interactionDeg},{itemPri},{decisionVel},{directionAcc},{avoidInc}");
                 Debug.Log("Created parameter log file and set column names");
             }
         }
@@ -143,173 +191,100 @@ public class Param_Mutate : MonoBehaviour
         {
             using (StreamWriter sw = new StreamWriter(paramFilePath, true))
             {
-                sw.WriteLine($"{mutateNum},{mutateRow},{runRatio},{v1Ratio},{h0Ratio},{forwardXBias},{isSameSignXZ},{jumpRatio},{coverageDeg},{itemDeg},{interactionDeg},{itemPri},{decisionVel},{directionAcc},{avoidInc}"); 
+                sw.WriteLine($"{mutateNum},{mutateRow},{runRatio},{v1Ratio},{h0Ratio},{forwardXBias},{isSameSignXZ},{jumpRatio},{coverageDeg},{itemDeg},{interactionDeg},{itemPri},{decisionVel},{directionAcc},{avoidInc}");
                 Debug.Log("Wrote to parameter log file");
             }
         }
-
-        
-        int rowsNum = GetTotalRows("Assets/Logs/player_data.csv");
-        mutateRowMolded = mutateRow - 50;
-        int[] selectedRows = SelectMutatedIndex(rowsNum, mutateNum, mutateRowMolded); 
-        
-        forwardXBiasMolded = forwardXBias - 50;
-        
-        int degSum = coverageDeg + itemDeg + interactionDeg;
-        float[] degs = new float[] { (float)coverageDeg / degSum, (float)itemDeg / degSum, (float)interactionDeg / degSum };
-        
-        itemPriMolded = itemPri - 50;
-        int destItem = SelectMutatedIndex(10, 1, itemPriMolded)[0];
-        
-        decisionVel = decisionVel * 60;
-
-        
-        LoadCsvData("Assets/Logs/player_data.csv");
-        mutatedFilePath = "Assets/Logs/player_data_mutated.csv";
-        if (mutateNum != 0)
-        {
-            StaticMutate(selectedRows);
-        }
-        else
-        {
-            DynamicMutate();
-        }
-        SaveCsvData(mutatedFilePath); 
-
-        
-        playerObject = GameObject.FindGameObjectWithTag("Player").GetComponent<Param_PS_V1>(); 
-        playerObject.PlayerStart();
-    }
-
-    void Update()
-    {
-        playerObject.PlayerUpdate();
     }
 
     
     public void StaticMutate(int[] selectedRows)
     {
-        
-        HashSet<int> selectedRowSet = new HashSet<int>(selectedRows); 
-
         int totalRows = csvData.Count; 
-        int runRowsCount = Mathf.FloorToInt(totalRows * runRatio / 100f);
-
         List<int> rowIndices = Enumerable.Range(0, totalRows).ToList(); 
         rowIndices.Shuffle();
+        ApplySpeedMutation(rowIndices, totalRows);
+        ApplyJumpMutation(rowIndices, totalRows);
+        ApplyVerticalDirectionMutation(rowIndices, totalRows);
+        ApplyHorizontalDirectionMutation(rowIndices, totalRows);
+        MutateSelectedCameraDirections(selectedRows);
+    }
 
-        for (int i = 0; i < totalRows; i++)  
+    private void ApplySpeedMutation(List<int> rowIndices, int totalRows)
+    {
+        int runRowsCount = Mathf.FloorToInt(totalRows * runRatio / 100f);
+        for (int i = 0; i < totalRows; i++)
         {
             string[] row = csvData[rowIndices[i]];
-            if (i < runRowsCount)
-            {
-                row[1] = sprintSpeed.ToString();
-            }
-            else
-            {
-                row[1] = normalSpeed.ToString();
-            }
+            row[1] = i < runRowsCount ? sprintSpeed.ToString() : normalSpeed.ToString();
         }
+    }
 
-        
+    private void ApplyJumpMutation(List<int> rowIndices, int totalRows)
+    {
         int jumpRowsCount = Mathf.FloorToInt(totalRows * jumpRatio / 100f);
         rowIndices.Shuffle();
-
-        for (int i = 0; i < totalRows; i++)  
+        for (int i = 0; i < totalRows; i++)
         {
             string[] row = csvData[rowIndices[i]];
-            if (i < jumpRowsCount)
-            {
-                row[10] = "1";
-            }
-            else
-            {
-                row[10] = "0";
-            }
+            row[10] = i < jumpRowsCount ? "1" : "0";
         }
+    }
 
-        
+    private void ApplyVerticalDirectionMutation(List<int> rowIndices, int totalRows)
+    {
         int v1RowsCount = Mathf.FloorToInt(totalRows * v1Ratio / 100f);
         rowIndices.Shuffle();
-
-        for (int i = 0; i < totalRows; i++)  
+        for (int i = 0; i < totalRows; i++)
         {
             string[] row = csvData[rowIndices[i]];
-            if (i < v1RowsCount)
-            {
-                row[2] = "1";
-            }
-            else
-            {
-                row[2] = UnityEngine.Random.Range(-1f, 1f).ToString();
-            }
+            row[2] = i < v1RowsCount ? "1" : UnityEngine.Random.Range(-1f, 1f).ToString();
         }
+    }
 
-        
+    private void ApplyHorizontalDirectionMutation(List<int> rowIndices, int totalRows)
+    {
         int h0RowsCount = Mathf.FloorToInt(totalRows * h0Ratio / 100f);
         rowIndices.Shuffle();
-
-        for (int i = 0; i < totalRows; i++)  
+        for (int i = 0; i < totalRows; i++)
         {
             string[] row = csvData[rowIndices[i]];
-            if (i < h0RowsCount)
-            {
-                row[3] = "0";
-            }
-            else
-            {
-                row[3] = UnityEngine.Random.Range(-1f, 1f).ToString();
-            }
+            row[3] = i < h0RowsCount ? "0" : UnityEngine.Random.Range(-1f, 1f).ToString();
         }
+    }
 
-        
-        Array.Sort(selectedRows); 
+    private void MutateSelectedCameraDirections(int[] selectedRows)
+    {
+        Array.Sort(selectedRows);
 
-        foreach (int rowIndex in selectedRows) 
+        foreach (int rowIndex in selectedRows)
         {
             string[] row = csvData[rowIndex];
             float origX = float.Parse(row[4]);
-            row[4] = GetRandomValue(forwardXBiasMolded).ToString(); 
+            row[4] = GetRandomValue(forwardXBiasMolded).ToString();
             float diffX = float.Parse(row[4]) - origX;
             float origZ = float.Parse(row[6]);
-            row[6] = Mathf.Sqrt(1.0f - Mathf.Pow(float.Parse(row[4]), 2)).ToString(); 
-            if (UnityEngine.Random.Range(0f, 100f) < isSameSignXZ) 
+            row[6] = Mathf.Sqrt(1.0f - Mathf.Pow(float.Parse(row[4]), 2)).ToString();
+            if (UnityEngine.Random.Range(0f, 100f) < isSameSignXZ)
             {
-                row[6] = (Mathf.Sign(float.Parse(row[4])) * Mathf.Abs(float.Parse(row[6]))).ToString(); 
+                row[6] = (Mathf.Sign(float.Parse(row[4])) * Mathf.Abs(float.Parse(row[6]))).ToString();
             }
             else
             {
-                row[6] = (-Mathf.Sign(float.Parse(row[4])) * Mathf.Abs(float.Parse(row[6]))).ToString(); 
+                row[6] = (-Mathf.Sign(float.Parse(row[4])) * Mathf.Abs(float.Parse(row[6]))).ToString();
             }
+
             float diffZ = float.Parse(row[6]) - origZ;
-            //Debug.Log("origX: " + origX + ", X: " + row[4] + ", diffX: " + diffX);
-            //Debug.Log("origZ: " + origZ + ", Z: " + row[6] + ", diffZ: " + diffZ);
-            for (int i = rowIndex + 1; i < csvData.Count; i++) 
+            for (int i = rowIndex + 1; i < csvData.Count; i++)
             {
-                Vector2 j = new Vector2(float.Parse(csvData[i][4]) + diffX, float.Parse(csvData[i][6]) + diffZ); 
-                j = j.normalized;
-                csvData[i][4] = (j[0]).ToString();
-                csvData[i][6] = (j[1]).ToString();
-                //if (float.Parse(csvData[i][4]) > 1f)
-                //{
-                //    csvData[i][4] = (1f - (float.Parse(csvData[i][4]) - 1f)).ToString();
-                //}
-                //else if (float.Parse(csvData[i][4]) < -1f)
-                //{
-                //    csvData[i][4] = (-1f - (float.Parse(csvData[i][4]) - (-1f))).ToString();
-                //}
-                //if (float.Parse(csvData[i][6]) > 1f)
-                //{
-                //    csvData[i][6] = (1f - (float.Parse(csvData[i][6]) - 1f)).ToString();
-                //}
-                //else if (float.Parse(csvData[i][6]) < -1f)
-                //{
-                //    csvData[i][6] = (-1f - (float.Parse(csvData[i][6]) - (-1f))).ToString();
-                //}
+                Vector2 adjustedDirection = new Vector2(float.Parse(csvData[i][4]) + diffX, float.Parse(csvData[i][6]) + diffZ).normalized;
+                csvData[i][4] = adjustedDirection[0].ToString();
+                csvData[i][6] = adjustedDirection[1].ToString();
             }
+
             for (int i = rowIndex; i < csvData.Count; i++)
             {
-                csvData[i][7] = csvData[i][6]; 
+                csvData[i][7] = csvData[i][6];
                 csvData[i][9] = (-float.Parse(csvData[i][4])).ToString();
             }
         }

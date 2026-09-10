@@ -1,0 +1,8 @@
+# Local AI-agent configuration, instructions, and resumable-work handoff state
+/.agents/
+/.codex/
+/AGENTS.md
+/docs/
+
+# Generated Unity player builds
+/Builds/

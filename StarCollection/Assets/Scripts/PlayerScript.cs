@@ -34,7 +34,7 @@ public class PlayerScript : MonoBehaviour
     public float v;
     public float h;
 
-    void Start()
+    private void Start()
     {
         //agent = GetComponent<NavMeshAgent>();
         //agent.destination = this.transform.position;
@@ -51,13 +51,13 @@ public class PlayerScript : MonoBehaviour
         startPos = transform.position;
     }
 
-    void Update()
+    private void Update()
     {
         Debug.Log("Current position = " + transform.position);
         
         if (Input.GetKeyDown(KeyCode.M))
         {
-            mouseCursor();
+            ToggleMouseCursor();
         }
 
         
@@ -106,47 +106,55 @@ public class PlayerScript : MonoBehaviour
         con.Move(moveDirection * Time.deltaTime);
 
         
-        if (Input.GetMouseButtonDown(0))
-        {
-            anim.SetBool("LeftClick", true);
-        }
+        UpdateAttackAnimation();
 
-        
-        if (Input.GetMouseButtonDown(1))
-        {
-            anim.SetBool("RightClick", true);
-        }
-        if (Input.GetMouseButtonUp(1))
-        {
-            anim.SetBool("RightClick", false);
-        }
-
-        if (isCollidingWithBorder)
-        {
-            frameCounter++; 
-
-            
-            if (frameCounter >= 300)
-            {
-                Debug.Log("Contact for more than 300 frames!");
-            }
-        }
+        TrackBorderContact();
     }
 
-    
     public void StartAttack()
     {
         isAttacking = true;
     }
 
-    
     public void EndAttack()
     {
         isAttacking = false;
     }
 
+    private void UpdateAttackAnimation()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            anim.SetBool("LeftClick", true);
+        }
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            anim.SetBool("RightClick", true);
+        }
+
+        if (Input.GetMouseButtonUp(1))
+        {
+            anim.SetBool("RightClick", false);
+        }
+    }
+
+    private void TrackBorderContact()
+    {
+        if (!isCollidingWithBorder)
+        {
+            return;
+        }
+
+        frameCounter++;
+        if (frameCounter >= 300)
+        {
+            Debug.Log("Contact for more than 300 frames!");
+        }
+    }
+
     
-    private void mouseCursor()
+    private void ToggleMouseCursor()
     {
         if (isPushedM)
         {

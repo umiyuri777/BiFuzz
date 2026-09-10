@@ -8,7 +8,7 @@ public class DisableCollisionWithPlayer : MonoBehaviour
     
     private bool isPlayerColliding = false;
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         
         if (other.CompareTag("Player"))
@@ -18,7 +18,7 @@ public class DisableCollisionWithPlayer : MonoBehaviour
         }
     }
 
-    void OnTriggerExit(Collider other)
+    private void OnTriggerExit(Collider other)
     {
         
         if (other.CompareTag("Player"))
@@ -28,9 +28,4 @@ public class DisableCollisionWithPlayer : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        
-        //Debug.Log("Is Player Colliding: " + isPlayerColliding);
-    }
 }

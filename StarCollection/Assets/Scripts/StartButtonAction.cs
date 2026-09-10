@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -8,14 +6,13 @@ public class StartButtonAction : MonoBehaviour
 {
     public Button button;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        button.onClick.AddListener(SceneSwitcher);
+        button.onClick.AddListener(LoadGameScene);
     }
 
-    void SceneSwitcher()
+    private void LoadGameScene()
     {
-        SceneManager.LoadScene("Prospect");
+        SceneManager.LoadScene("Game");
     }
 }

@@ -23,7 +23,7 @@ public class PlayerNav : MonoBehaviour
     private Vector3 postPosition;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         agent = GetComponent<NavMeshAgent>();
         navON = GameObject.Find("NavON");
@@ -39,7 +39,7 @@ public class PlayerNav : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.N))
         {
@@ -80,7 +80,7 @@ public class PlayerNav : MonoBehaviour
             
             if (Input.GetKeyDown(KeyCode.M))
             {
-                mouseCursor();
+                ToggleMouseCursor();
             }
 
             navDestinationPos = null;
@@ -105,7 +105,7 @@ public class PlayerNav : MonoBehaviour
     }
 
     
-    private void mouseCursor()
+    private void ToggleMouseCursor()
     {
         if (isPushedM)
         {

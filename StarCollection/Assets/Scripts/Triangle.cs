@@ -5,10 +5,9 @@ using UnityEngine;
 public class Prism : MonoBehaviour
 {
     public int n = 6;
-    void Start()
+    private void Start()
     {
         MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
-        MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
         MeshCollider meshCollider = gameObject.GetComponent<MeshCollider>();
         Mesh mesh = new Mesh();
         Vector3[] vertices = new Vector3[n * 6];

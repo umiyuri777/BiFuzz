@@ -9,17 +9,12 @@ public class test_triggerScoring : MonoBehaviour
     int i;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         scoringSystem = GetComponent<ScoringSystem>();
         i = scoringSystem.autoTestingScore;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
 
     private void OnTriggerEnter(Collider other)
     {

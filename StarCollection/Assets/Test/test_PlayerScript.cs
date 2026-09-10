@@ -39,7 +39,7 @@ public class test_PlayerScript : MonoBehaviour
     private string csvFilePath;
     private StreamWriter csvWriter;
 
-    void Start()
+    private void Start()
     {
         //agent = GetComponent<NavMeshAgent>();
         //agent.destination = this.transform.position;
@@ -70,12 +70,12 @@ public class test_PlayerScript : MonoBehaviour
         csvWriter.WriteLine("Frame,Speed,v,h,CameraForwardX,CameraForwardY,CameraForwardZ,CameraRightX,CameraRightY,CameraRightZ,JumpPressed");
     }
 
-    void Update()
+    private void Update()
     {
         
         if (Input.GetKeyDown(KeyCode.M))
         {
-            mouseCursor();
+            ToggleMouseCursor();
         }
 
         
@@ -139,11 +139,10 @@ public class test_PlayerScript : MonoBehaviour
         }
 
         
-        string jumpPressed = Input.GetButtonDown("Jump") ? "1" : "0";
-        csvWriter.WriteLine($"{Time.frameCount},{speed},{v},{h},{cameraForward.x},{cameraForward.y},{cameraForward.z},{Camera.main.transform.right.x},{Camera.main.transform.right.y},{Camera.main.transform.right.z},{jumpPressed}");
+        WriteFrameRecord(speed, cameraForward);
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         
         if (csvWriter != null)
@@ -165,7 +164,13 @@ public class test_PlayerScript : MonoBehaviour
     }
 
     
-    private void mouseCursor()
+    private void WriteFrameRecord(float speed, Vector3 cameraForward)
+    {
+        string jumpPressed = Input.GetButtonDown("Jump") ? "1" : "0";
+        csvWriter.WriteLine($"{Time.frameCount},{speed},{v},{h},{cameraForward.x},{cameraForward.y},{cameraForward.z},{Camera.main.transform.right.x},{Camera.main.transform.right.y},{Camera.main.transform.right.z},{jumpPressed}");
+    }
+
+    private void ToggleMouseCursor()
     {
         if (isPushedM)
         {

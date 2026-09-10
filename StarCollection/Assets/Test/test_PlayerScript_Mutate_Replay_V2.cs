@@ -35,7 +35,7 @@ public class test_PlayerScript_Mutate_Replay_V2 : MonoBehaviour
     private List<string[]> csvData;
     private int currentFrameIndex;
 
-    void Start()
+    private void Start()
     {
         con = GetComponent<CharacterController>();
         anim = GetComponent<Animator>();
@@ -75,11 +75,11 @@ public class test_PlayerScript_Mutate_Replay_V2 : MonoBehaviour
         currentFrameIndex = 0;
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.M))
         {
-            mouseCursor();
+            ToggleMouseCursor();
         }
 
         anim.SetBool("LeftClick", false);
@@ -119,10 +119,7 @@ public class test_PlayerScript_Mutate_Replay_V2 : MonoBehaviour
         }
         else if (currentFrameIndex >= csvData.Count)
         {
-            Application.Quit();
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#endif
+            StopReplay();
         }
     }
 
@@ -165,7 +162,15 @@ public class test_PlayerScript_Mutate_Replay_V2 : MonoBehaviour
         isAttacking = false;
     }
 
-    private void mouseCursor()
+    private void StopReplay()
+    {
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+    }
+
+    private void ToggleMouseCursor()
     {
         if (isPushedM)
         {

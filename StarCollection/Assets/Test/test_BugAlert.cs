@@ -35,7 +35,7 @@ public class test_BugAlert : MonoBehaviour
     
     public int requiredFrameCount = 1800;
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         
         if (other.CompareTag("Player"))
@@ -45,7 +45,7 @@ public class test_BugAlert : MonoBehaviour
         }
     }
 
-    void OnTriggerStay(Collider other)
+    private void OnTriggerStay(Collider other)
     {
         
         if (other.CompareTag("Player") && isPlayerCollidered == false)
@@ -93,13 +93,17 @@ public class test_BugAlert : MonoBehaviour
                 else
                 {
                     Debug.Log("Error: fuzz_type.csv file does not exist.");
+#if UNITY_EDITOR
                     UnityEditor.EditorApplication.isPlaying = false;
+#else
+                    Application.Quit();
+#endif
                 }
             }
         }
     }
 
-    void OnTriggerExit(Collider other)
+    private void OnTriggerExit(Collider other)
     {
         
         if (other.CompareTag("Player"))

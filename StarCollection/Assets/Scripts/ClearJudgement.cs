@@ -13,7 +13,7 @@ public class ClearJudgement : MonoBehaviour
     private GameObject gameClear;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         
         sheepNum = GameObject.FindGameObjectsWithTag("Evasive").Length;
@@ -25,7 +25,7 @@ public class ClearJudgement : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         
         if (sheepNum - GameObject.FindGameObjectsWithTag("Evasive").Length >= 10 && goatNum - GameObject.FindGameObjectsWithTag("Enemy").Length >= 10 && itemNum - GameObject.FindGameObjectsWithTag("Item").Length >= 10)

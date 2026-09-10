@@ -6,7 +6,7 @@ public class SpawnStack : MonoBehaviour
     private bool hasSpawned = false; 
     public Vector3 playerPosition;
 
-    void Update()
+    private void Update()
     {
         if (hasSpawned)
         {

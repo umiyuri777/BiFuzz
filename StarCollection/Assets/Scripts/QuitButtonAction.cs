@@ -8,13 +8,12 @@ public class QuitButtonAction : MonoBehaviour
 {
     public Button button;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
-        button.onClick.AddListener(QuitGame);
+        button.onClick.AddListener(QuitApplication);
     }
 
-    void QuitGame()
+    private void QuitApplication()
     {
         #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;

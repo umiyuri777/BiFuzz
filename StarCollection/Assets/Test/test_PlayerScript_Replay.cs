@@ -38,7 +38,7 @@ public class test_PlayerScript_Replay : MonoBehaviour
     private List<string[]> csvData;
     private int currentFrameIndex;
 
-    void Start()
+    private void Start()
     {
         con = GetComponent<CharacterController>();
         anim = GetComponent<Animator>();
@@ -85,12 +85,12 @@ public class test_PlayerScript_Replay : MonoBehaviour
         currentFrameIndex = 0;
     }
 
-    void Update()
+    private void Update()
     {
         
         if (Input.GetKeyDown(KeyCode.M))
         {
-            mouseCursor();
+            ToggleMouseCursor();
         }
 
         
@@ -133,11 +133,7 @@ public class test_PlayerScript_Replay : MonoBehaviour
         else if (currentFrameIndex >= csvData.Count)
         {
             
-            Application.Quit();
-#if UNITY_EDITOR
-            
-            UnityEditor.EditorApplication.isPlaying = false;
-#endif
+            StopReplay();
         }
     }
 
@@ -154,7 +150,15 @@ public class test_PlayerScript_Replay : MonoBehaviour
     }
 
     
-    private void mouseCursor()
+    private void StopReplay()
+    {
+        Application.Quit();
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#endif
+    }
+
+    private void ToggleMouseCursor()
     {
         if (isPushedM)
         {

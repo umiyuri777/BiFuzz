@@ -1,16 +1,13 @@
 using System.IO;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public class PositionLogger : MonoBehaviour
 {
-    private string fuzzTypePath;
     private string positionsPath;
 
-    void Start()
+    private void Start()
     {
         
-        fuzzTypePath = Path.Combine(Application.dataPath, "Logs", "fuzz_type.csv");
         positionsPath = Path.Combine(Application.dataPath, "Logs", "positions.csv");
 
         
@@ -22,44 +19,12 @@ public class PositionLogger : MonoBehaviour
         }
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        
-        //string lastLine = GetLastLine(fuzzTypePath);
-        //if (lastLine == "local")
-        //{
-        
-        //    Vector3 position = transform.position;
-
-        
-        //    LogPosition(position);
-        //}
-        
-        Vector3 position = transform.position;
-
-        
-        LogPosition(position);
+        LogPosition(transform.position);
     }
 
-    string GetLastLine(string filePath)
-    {
-        if (!File.Exists(filePath))
-        {
-            return null;
-        }
-
-        string lastLine = null;
-        using (StreamReader reader = new StreamReader(filePath))
-        {
-            while (!reader.EndOfStream)
-            {
-                lastLine = reader.ReadLine();
-            }
-        }
-        return lastLine;
-    }
-
-    void LogPosition(Vector3 position)
+    private void LogPosition(Vector3 position)
     {
         using (StreamWriter writer = new StreamWriter(positionsPath, true))
         {

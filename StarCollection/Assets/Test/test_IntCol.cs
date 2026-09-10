@@ -25,7 +25,7 @@ public class DisableCollisionOnPlayerContact : MonoBehaviour
     //    }
     //}
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         
         if (!hasPlayerContacted && other.gameObject.tag == "Player")

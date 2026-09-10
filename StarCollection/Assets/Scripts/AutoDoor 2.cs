@@ -9,7 +9,7 @@ public class AutoDoor2 : MonoBehaviour
     public Transform target;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         //doorPosition = GameObject.Find("Cube 1").transform.position;
         animator = GetComponent<Animator>();
@@ -18,7 +18,7 @@ public class AutoDoor2 : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         
         animator.SetFloat("Distance", (doorPosition - target.position).magnitude);

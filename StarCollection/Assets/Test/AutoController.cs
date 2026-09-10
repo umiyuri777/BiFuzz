@@ -8,14 +8,14 @@ public class AutoController : MonoBehaviour
     PlayerScript playerscript;
     int count;
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         playerscript = GetComponent<PlayerScript>();
         count = 0;
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (count % 60 == 0)
         {

@@ -14,7 +14,7 @@ public class AutoController3 : MonoBehaviour
     double prevCoverage = 0;
     double nowCoverage = 0;
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         playerscript = GetComponent<PlayerScript>();
         count = 0;
@@ -24,7 +24,7 @@ public class AutoController3 : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         if (count % 60 == 0)
         {
@@ -50,7 +50,7 @@ public class AutoController3 : MonoBehaviour
         count++;
     }
 
-    bool Judge(float x, float y)
+    private bool Judge(float x, float y)
     {
         if ((x < 0 && y > 0) || (x > 0 && y < 0))
         {

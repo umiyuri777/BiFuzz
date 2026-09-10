@@ -32,7 +32,7 @@ public class ObjectPlacerCopied : MonoBehaviour
         canvasRectTransform = this.GetComponent<RectTransform>();
     }
 
-    void Update()
+    private void Update()
     {
         if (Input.GetMouseButtonDown(0) && miniMapZoom.isPushed == true)
         {

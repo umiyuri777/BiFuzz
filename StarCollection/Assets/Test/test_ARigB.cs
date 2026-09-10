@@ -8,7 +8,7 @@ public class AddRigidbodyOnTrigger : MonoBehaviour
     
     private bool hasTriggered = false;
 
-    void OnTriggerEnter(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
         
         if (!hasTriggered && other.CompareTag("Player"))
